@@ -19,12 +19,13 @@ AGE_FILTERS = {
     'Past year': 365,
 }
 
-# Article sources with RSS feed templates
+# Article sources with RSS feed templates ({tag} is replaced with search term)
 ARTICLE_SOURCES = {
     'Medium': 'https://medium.com/feed/tag/{tag}',
     'Dev.to': 'https://dev.to/feed/tag/{tag}',
-    'Hashnode': 'https://hashnode.com/n/{tag}/rss',
     'HackerNoon': 'https://hackernoon.com/tagged/{tag}/feed',
+    'Towards Data Science': 'https://towardsdatascience.com/feed',
+    'freeCodeCamp': 'https://www.freecodecamp.org/news/rss/',
 }
 
 
