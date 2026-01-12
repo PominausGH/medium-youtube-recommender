@@ -55,6 +55,9 @@ def parse_article_age(date_str):
 
 # AI summarizer
 def ai_summary(title, text, keywords):
+    title = title or ''
+    text = text or ''
+    keywords = [k for k in keywords if k]  # Filter out None/empty
     prompt = f"""Title: {title}
 Content: {text[:500]}
 
@@ -118,19 +121,19 @@ def check_youtube(query, keywords, max_age_days=None):
             age_days = parse_youtube_age(date)
             if max_age_days and age_days and age_days > max_age_days:
                 continue
-            title = vid['title']
-            link = vid['link']
-            thumbnails = vid.get('thumbnails', [])
-            thumb_url = thumbnails[0]['url'] if thumbnails else ''
-            desc_snip = vid.get('descriptionSnippet', '')
-            desc_text = ' '.join(d['text'] for d in desc_snip) if desc_snip else ''
+            title = vid.get('title') or 'No title'
+            link = vid.get('link') or ''
+            thumbnails = vid.get('thumbnails') or []
+            thumb_url = thumbnails[0].get('url', '') if thumbnails else ''
+            desc_snip = vid.get('descriptionSnippet') or []
+            desc_text = ' '.join(str(d.get('text', '')) for d in desc_snip) if desc_snip else ''
             ai_result = ai_summary(title, desc_text, keywords)
             results.append((title, link, date, thumb_url, ai_result))
             if len(results) >= 5:
                 break
         return results
     except Exception as e:
-        return [(f'Error fetching YouTube', '', '', '', str(e))]
+        return [('Error fetching YouTube', '', '', '', str(e))]
 
 
 # Streamlit UI
