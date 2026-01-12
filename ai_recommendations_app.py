@@ -183,4 +183,5 @@ if st.button('Search All', type='primary'):
         for title, link, date, thumb_url, ai_result in results:
             if thumb_url:
                 st.image(thumb_url, width=280)
-            st.markdown(f'**{title}**\n\n*{date or ""}* | [Watch here]({link})\n\n{ai_result}\n\n---')
+            transcript_link = f'https://tactiq.io/tools/youtube-transcript?url={link}' if link else ''
+            st.markdown(f'**{title}**\n\n*{date or ""}* | [Watch]({link}) | [Transcript]({transcript_link})\n\n{ai_result}\n\n---')
