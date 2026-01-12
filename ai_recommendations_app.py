@@ -93,7 +93,7 @@ def check_youtube(query, keywords, max_age_days=None):
         videos = VideosSearch(query, limit=15)  # Get more to filter
         results = []
         for vid in videos.result()['result']:
-            date = vid.get('publishedTime', '')
+            date = vid.get('publishedTime') or ''
             age_days = parse_youtube_age(date)
             if max_age_days and age_days and age_days > max_age_days:
                 continue
@@ -148,4 +148,4 @@ if st.button('Search Both', type='primary'):
         for title, link, date, thumb_url, ai_result in results:
             if thumb_url:
                 st.image(thumb_url, width=280)
-            st.markdown(f'**{title}**\n\n*{date}* | [Watch here]({link})\n\n{ai_result}\n\n---')
+            st.markdown(f'**{title}**\n\n*{date or ""}* | [Watch here]({link})\n\n{ai_result}\n\n---')
