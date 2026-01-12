@@ -54,13 +54,15 @@ def check_youtube(query, keywords):
             title = vid['title']
             link = vid['link']
             date = vid.get('publishedTime', '')
+            thumbnails = vid.get('thumbnails', [])
+            thumb_url = thumbnails[0]['url'] if thumbnails else ''
             desc_snip = vid.get('descriptionSnippet', '')
             desc_text = ' '.join(d['text'] for d in desc_snip) if desc_snip else ''
             ai_result = ai_summary(title, desc_text, keywords)
-            results.append((title, link, date, ai_result))
+            results.append((title, link, date, thumb_url, ai_result))
         return results
     except Exception as e:
-        return [(f'Error fetching YouTube', '', '', str(e))]
+        return [(f'Error fetching YouTube', '', '', '', str(e))]
 
 
 # Streamlit UI
@@ -86,5 +88,7 @@ if st.button('Search Both', type='primary'):
         st.subheader('YouTube Videos')
         with st.spinner('Searching YouTube...'):
             results = check_youtube(search_query, keywords)
-        for title, link, date, ai_result in results:
+        for title, link, date, thumb_url, ai_result in results:
+            if thumb_url:
+                st.image(thumb_url, width=280)
             st.markdown(f'**{title}**\n\n*{date}* | [Watch here]({link})\n\n{ai_result}\n\n---')
