@@ -36,12 +36,13 @@ def check_medium(query, keywords):
         for entry in feed.entries[:5]:
             title = entry.title
             link = entry.link
+            date = entry.get('published', '')[:16] if entry.get('published') else ''
             summary = BeautifulSoup(entry.summary, 'html.parser').get_text()
             ai_result = ai_summary(title, summary, keywords)
-            results.append((title, link, ai_result))
+            results.append((title, link, date, ai_result))
         return results
     except Exception as e:
-        return [(f'Error fetching Medium', '', str(e))]
+        return [(f'Error fetching Medium', '', '', str(e))]
 
 
 # YouTube search
@@ -52,13 +53,14 @@ def check_youtube(query, keywords):
         for vid in videos.result()['result']:
             title = vid['title']
             link = vid['link']
+            date = vid.get('publishedTime', '')
             desc_snip = vid.get('descriptionSnippet', '')
             desc_text = ' '.join(d['text'] for d in desc_snip) if desc_snip else ''
             ai_result = ai_summary(title, desc_text, keywords)
-            results.append((title, link, ai_result))
+            results.append((title, link, date, ai_result))
         return results
     except Exception as e:
-        return [(f'Error fetching YouTube', '', str(e))]
+        return [(f'Error fetching YouTube', '', '', str(e))]
 
 
 # Streamlit UI
@@ -77,12 +79,12 @@ if st.button('Search Both', type='primary'):
         st.subheader('Medium Articles')
         with st.spinner('Searching Medium...'):
             results = check_medium(search_query, keywords)
-        for title, link, ai_result in results:
-            st.markdown(f'**{title}**\n\n[Read here]({link})\n\n{ai_result}\n\n---')
+        for title, link, date, ai_result in results:
+            st.markdown(f'**{title}**\n\n*{date}* | [Read here]({link})\n\n{ai_result}\n\n---')
 
     with col2:
         st.subheader('YouTube Videos')
         with st.spinner('Searching YouTube...'):
             results = check_youtube(search_query, keywords)
-        for title, link, ai_result in results:
-            st.markdown(f'**{title}**\n\n[Watch here]({link})\n\n{ai_result}\n\n---')
+        for title, link, date, ai_result in results:
+            st.markdown(f'**{title}**\n\n*{date}* | [Watch here]({link})\n\n{ai_result}\n\n---')
