@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Streamlit secrets (add via Streamlit Cloud dashboard)
+.streamlit/secrets.toml
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.log
+spawn_batch_results.json
