@@ -43,3 +43,41 @@ def test_delete_interest(db):
     db.delete_interest(interest_id)
     interests = db.get_interests()
     assert len(interests) == 0
+
+
+# Content CRUD tests
+def test_add_content(db):
+    content_id = db.add_content(
+        title="FastAPI Tutorial",
+        url="https://example.com/fastapi",
+        source_type="article",
+        source_name="Dev.to"
+    )
+    assert content_id is not None
+
+
+def test_add_duplicate_url_returns_existing(db):
+    id1 = db.add_content(title="Title 1", url="https://example.com/1", source_type="article")
+    id2 = db.add_content(title="Title 2", url="https://example.com/1", source_type="article")
+    assert id1 == id2
+
+
+def test_get_content_by_id(db):
+    content_id = db.add_content(
+        title="FastAPI Tutorial",
+        url="https://example.com/fastapi",
+        source_type="article",
+        summary="A great tutorial",
+        recommendation="RECOMMENDED"
+    )
+    content = db.get_content(content_id)
+    assert content['title'] == "FastAPI Tutorial"
+    assert content['recommendation'] == "RECOMMENDED"
+
+
+def test_get_recommended_content(db):
+    db.add_content(title="Good", url="https://a.com", source_type="article", recommendation="RECOMMENDED")
+    db.add_content(title="Bad", url="https://b.com", source_type="article", recommendation="SKIP")
+    recommended = db.get_recommended_content()
+    assert len(recommended) == 1
+    assert recommended[0]['title'] == "Good"

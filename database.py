@@ -112,5 +112,39 @@ class Database:
         self.conn.execute("DELETE FROM interests WHERE id = ?", (interest_id,))
         self.conn.commit()
 
+    def add_content(self, title: str, url: str, source_type: str, source_name: str = None,
+                    summary: str = None, recommendation: str = None, relevance_score: float = None,
+                    skill_level: str = None, est_read_time: int = None, thumbnail_url: str = None,
+                    raw_date: str = None) -> int:
+        # Check for existing URL
+        existing = self.conn.execute("SELECT id FROM content WHERE url = ?", (url,)).fetchone()
+        if existing:
+            return existing[0]
+
+        cursor = self.conn.execute('''
+            INSERT INTO content (title, url, source_type, source_name, summary, recommendation,
+                                relevance_score, skill_level, est_read_time, thumbnail_url, raw_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, url, source_type, source_name, summary, recommendation,
+              relevance_score, skill_level, est_read_time, thumbnail_url, raw_date))
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_content(self, content_id: int) -> dict:
+        cursor = self.conn.execute("SELECT * FROM content WHERE id = ?", (content_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def get_recommended_content(self, source_type: str = None, limit: int = 50) -> list:
+        query = "SELECT * FROM content WHERE recommendation = 'RECOMMENDED'"
+        params = []
+        if source_type:
+            query += " AND source_type = ?"
+            params.append(source_type)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        cursor = self.conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
     def close(self):
         self.conn.close()
