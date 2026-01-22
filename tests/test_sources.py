@@ -1,6 +1,7 @@
 import pytest
 from sources.articles import ArticleSource
 from sources.youtube import YouTubeSource
+from sources.reddit import RedditSource
 
 
 def test_article_source_search():
@@ -22,3 +23,13 @@ def test_youtube_source_search():
         assert 'title' in results[0]
         assert 'url' in results[0]
         assert 'source_type' in results[0]
+
+
+def test_reddit_source_search():
+    source = RedditSource()
+    results = source.search("python", limit=2)
+    assert isinstance(results, list)
+    if results:
+        assert 'title' in results[0]
+        assert 'url' in results[0]
+        assert results[0]['source_type'] == 'reddit'
