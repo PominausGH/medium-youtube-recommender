@@ -1,36 +1,71 @@
-# AI Article & Video Recommender
+# AI Content Curator
 
-Search multiple platforms for articles and videos, get AI-powered summaries and recommendations.
+Automated content curation based on your interests and projects. Searches articles, YouTube, Reddit, and Stack Overflow, uses AI to summarize and recommend, and syncs to Obsidian.
 
 ## Features
 
-- **Multi-source article search**: Medium, Dev.to, HackerNoon, Towards Data Science, freeCodeCamp
-- **YouTube video search** with thumbnails and transcript links
-- **AI summaries** using GPT-4 to determine if content is worth your time
-- **Age filter** to find recent content (past week/month/year)
+- **Multi-source search**: Medium, Dev.to, HackerNoon, YouTube, Reddit, Stack Overflow
+- **Project scanning**: Analyze GitHub repos to suggest relevant topics
+- **AI summaries**: GPT-4 powered summaries with skill level and time estimates
+- **Preference learning**: Improves recommendations based on your actions
+- **Obsidian sync**: Export read items to your knowledge base
+- **Automated refresh**: Cron-based content updates
 
-## Setup
+## Quick Start
 
 ### Local Development
 
 ```bash
+# Clone and setup
+git clone <repo>
+cd content-curator
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-streamlit run ai_recommendations_app.py
+
+# Set environment variables
+export OPENAI_API_KEY="sk-..."
+
+# Run
+streamlit run app.py
 ```
 
-### Streamlit Cloud
+### Docker (QNAP NAS)
 
-1. Fork/push this repo to GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Connect your repo
-4. Add secrets in the dashboard:
+```bash
+# Create .env file
+echo "OPENAI_API_KEY=sk-..." > .env
+echo "OBSIDIAN_VAULT=/share/Obsidian" >> .env
 
-```toml
-OPENAI_API_KEY = "sk-..."
+# Build and run
+docker-compose up -d
 ```
 
-## Environment Variables
+Access at `http://your-nas-ip:8501`
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | Your OpenAI API key for GPT-4 summaries |
+### Tailscale Setup
+
+1. Install Tailscale on NAS and phone
+2. Access via Tailscale IP: `http://100.x.x.x:8501`
+
+## Configuration
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT-4 | Yes |
+| `GITHUB_TOKEN` | GitHub token for private repos | No |
+| `OBSIDIAN_VAULT` | Path to Obsidian vault | No |
+
+## Architecture
+
+See `docs/plans/2025-01-21-content-curator-design.md` for full design document.
+
+## Development
+
+```bash
+# Run tests
+pytest -v
+
+# Run specific test
+pytest tests/test_database.py -v
+```
