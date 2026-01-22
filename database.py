@@ -146,5 +146,63 @@ class Database:
         cursor = self.conn.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
+    def save_item(self, content_id: int, notes: str = None) -> int:
+        # Check if already saved
+        existing = self.conn.execute(
+            "SELECT id FROM saved_items WHERE content_id = ?", (content_id,)
+        ).fetchone()
+        if existing:
+            return existing[0]
+
+        cursor = self.conn.execute(
+            "INSERT INTO saved_items (content_id, notes) VALUES (?, ?)",
+            (content_id, notes)
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_saved_items(self, status: str = None) -> list:
+        query = '''
+            SELECT s.*, c.title, c.url, c.source_type, c.source_name, c.summary, c.thumbnail_url
+            FROM saved_items s
+            JOIN content c ON s.content_id = c.id
+        '''
+        params = []
+        if status:
+            query += " WHERE s.status = ?"
+            params.append(status)
+        query += " ORDER BY s.saved_at DESC"
+        cursor = self.conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def update_saved_item(self, saved_id: int, **kwargs):
+        valid_fields = {'status', 'notes', 'synced_to_obsidian', 'read_at'}
+        updates = {k: v for k, v in kwargs.items() if k in valid_fields}
+        if not updates:
+            return
+        set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+        self.conn.execute(
+            f"UPDATE saved_items SET {set_clause} WHERE id = ?",
+            (*updates.values(), saved_id)
+        )
+        self.conn.commit()
+
+    def record_action(self, content_id: int, action: str):
+        self.conn.execute(
+            "INSERT INTO user_actions (content_id, action) VALUES (?, ?)",
+            (content_id, action)
+        )
+        self.conn.commit()
+
+    def get_user_actions(self, content_id: int = None) -> list:
+        query = "SELECT * FROM user_actions"
+        params = []
+        if content_id:
+            query += " WHERE content_id = ?"
+            params.append(content_id)
+        query += " ORDER BY timestamp DESC"
+        cursor = self.conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
     def close(self):
         self.conn.close()

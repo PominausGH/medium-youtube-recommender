@@ -81,3 +81,28 @@ def test_get_recommended_content(db):
     recommended = db.get_recommended_content()
     assert len(recommended) == 1
     assert recommended[0]['title'] == "Good"
+
+
+# Saved items tests
+def test_save_item(db):
+    content_id = db.add_content(title="Test", url="https://test.com", source_type="article")
+    saved_id = db.save_item(content_id)
+    assert saved_id is not None
+    saved = db.get_saved_items()
+    assert len(saved) == 1
+
+
+def test_update_saved_item_status(db):
+    content_id = db.add_content(title="Test", url="https://test.com", source_type="article")
+    saved_id = db.save_item(content_id)
+    db.update_saved_item(saved_id, status="read")
+    saved = db.get_saved_items(status="read")
+    assert len(saved) == 1
+
+
+def test_record_user_action(db):
+    content_id = db.add_content(title="Test", url="https://test.com", source_type="article")
+    db.record_action(content_id, "clicked")
+    actions = db.get_user_actions(content_id)
+    assert len(actions) == 1
+    assert actions[0]['action'] == "clicked"
