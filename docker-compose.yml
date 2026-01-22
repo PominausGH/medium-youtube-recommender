@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: content-curator
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ${OBSIDIAN_VAULT:-/share/Obsidian}:/obsidian
+      - ${PROJECTS_PATH:-/share/Projects}:/projects
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    restart: unless-stopped
+
+  # Optional: Tailscale sidecar
+  # tailscale:
+  #   image: tailscale/tailscale:latest
+  #   hostname: content-curator
+  #   environment:
+  #     - TS_AUTHKEY=${TS_AUTHKEY}
+  #     - TS_STATE_DIR=/var/lib/tailscale
+  #   volumes:
+  #     - tailscale-state:/var/lib/tailscale
+  #   cap_add:
+  #     - NET_ADMIN
+  #   restart: unless-stopped
+
+# volumes:
+#   tailscale-state:

@@ -1,0 +1,5 @@
+# crontab
+# Run content refresh at 6am and 6pm
+0 6,18 * * * cd /app && /usr/local/bin/python cron_refresh.py >> /var/log/cron.log 2>&1
+# Empty line required
+

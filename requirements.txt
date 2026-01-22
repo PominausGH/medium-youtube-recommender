@@ -1,6 +1,6 @@
-streamlit
-feedparser
-beautifulsoup4
-youtube-search-python
-httpx<0.28
-openai
+streamlit>=1.28.0
+feedparser>=6.0.0
+beautifulsoup4>=4.12.0
+youtube-search-python>=1.6.0
+openai>=1.0.0
+requests>=2.31.0
