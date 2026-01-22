@@ -2,35 +2,28 @@
 """
 Integration tests for the full content curation flow.
 """
-import pytest
-import tempfile
 import os
-from unittest.mock import patch, Mock
+import tempfile
 
+import pytest
 
-@pytest.fixture
-def temp_db():
-    import tempfile
-    fd, path = tempfile.mkstemp(suffix='.db')
-    os.close(fd)
-    yield path
-    os.unlink(path)
+from database import Database
+from project_scanner import ProjectScanner
+from obsidian_exporter import ObsidianExporter
 
 
 def test_full_flow_add_interest_to_content(temp_db):
     """Test: Add interest -> Search -> Summarize -> Save -> Display"""
-    from database import Database
-
     db = Database(temp_db)
 
     # 1. Add interest
     interest_id = db.add_interest("Python testing", source="manual")
-    assert interest_id is not None
+    assert interest_id is not None, "add_interest should return a valid ID"
 
     # 2. Verify interest is active
     interests = db.get_interests(active_only=True)
-    assert len(interests) == 1
-    assert interests[0]['topic'] == "Python testing"
+    assert len(interests) == 1, "Should have exactly one active interest"
+    assert interests[0]['topic'] == "Python testing", "Interest topic should match"
 
     # 3. Add mock content
     content_id = db.add_content(
@@ -45,29 +38,30 @@ def test_full_flow_add_interest_to_content(temp_db):
 
     # 4. Get recommended content
     content = db.get_recommended_content()
-    assert len(content) == 1
-    assert content[0]['title'] == "Python Testing Best Practices"
+    assert len(content) == 1, "Should have exactly one recommended content item"
+    assert content[0]['title'] == "Python Testing Best Practices", "Content title should match"
 
     # 5. Save to reading list
     saved_id = db.save_item(content_id)
-    assert saved_id is not None
+    assert saved_id is not None, "save_item should return a valid ID"
 
     # 6. Verify in reading list
     saved = db.get_saved_items(status='unread')
-    assert len(saved) == 1
+    assert len(saved) == 1, "Should have exactly one unread saved item"
 
     # 7. Mark as read
     db.update_saved_item(saved_id, status='read')
     saved_read = db.get_saved_items(status='read')
-    assert len(saved_read) == 1
+    assert len(saved_read) == 1, "Should have exactly one read item"
+
+    # 8. Verify no unread items remain
+    assert len(db.get_saved_items(status='unread')) == 0, "No items should remain unread"
 
     db.close()
 
 
 def test_project_scan_to_suggestions():
     """Test: Scan project -> Get suggestions"""
-    from project_scanner import ProjectScanner
-
     scanner = ProjectScanner()
 
     # Mock a project structure
@@ -82,14 +76,13 @@ def test_project_scan_to_suggestions():
 
         result = scanner.scan_local(tmpdir)
 
-        assert 'Python' in result['technologies']
-        assert any('authentication' in t['text'].lower() for t in result['todos'])
+        assert 'Python' in result['technologies'], "Should detect Python as a technology"
+        assert any('authentication' in t['text'].lower() for t in result['todos']), \
+            "Should find authentication TODO"
 
 
 def test_obsidian_export():
     """Test: Save item -> Export to Obsidian"""
-    from obsidian_exporter import ObsidianExporter
-
     with tempfile.TemporaryDirectory() as vault:
         exporter = ObsidianExporter(vault)
 
@@ -103,11 +96,11 @@ def test_obsidian_export():
 
         filepath = exporter.export_item(item, notes="My notes here")
 
-        assert os.path.exists(filepath)
+        assert os.path.exists(filepath), "Exported file should exist"
 
         with open(filepath) as f:
             content = f.read()
 
-        assert 'Test Article' in content
-        assert 'My notes here' in content
-        assert 'example.com/test' in content
+        assert 'Test Article' in content, "Content should include article title"
+        assert 'My notes here' in content, "Content should include user notes"
+        assert 'example.com/test' in content, "Content should include article URL"
