@@ -81,5 +81,36 @@ class Database:
         )
         return [row[0] for row in cursor.fetchall()]
 
+    def add_interest(self, topic: str, source: str = "manual", status: str = "active", skill_level: str = "intermediate") -> int:
+        cursor = self.conn.execute(
+            "INSERT INTO interests (topic, source, status, skill_level) VALUES (?, ?, ?, ?)",
+            (topic, source, status, skill_level)
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_interests(self, active_only: bool = False) -> list:
+        query = "SELECT * FROM interests"
+        if active_only:
+            query += " WHERE status = 'active'"
+        cursor = self.conn.execute(query)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def update_interest(self, interest_id: int, **kwargs):
+        valid_fields = {'topic', 'status', 'skill_level'}
+        updates = {k: v for k, v in kwargs.items() if k in valid_fields}
+        if not updates:
+            return
+        set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+        self.conn.execute(
+            f"UPDATE interests SET {set_clause} WHERE id = ?",
+            (*updates.values(), interest_id)
+        )
+        self.conn.commit()
+
+    def delete_interest(self, interest_id: int):
+        self.conn.execute("DELETE FROM interests WHERE id = ?", (interest_id,))
+        self.conn.commit()
+
     def close(self):
         self.conn.close()
