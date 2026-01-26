@@ -1,7 +1,16 @@
+# sources/articles.py
+"""Article source for RSS feed content from various tech blogs."""
+
+import logging
+from typing import Any
+
 import feedparser
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 from .base import ContentSource
+
+logger = logging.getLogger(__name__)
 
 ARTICLE_SOURCES = {
     'Medium': 'https://medium.com/feed/tag/{tag}',
@@ -13,7 +22,35 @@ ARTICLE_SOURCES = {
 
 
 class ArticleSource(ContentSource):
-    def search(self, query: str, sources: List[str] = None, limit: int = 5, **kwargs) -> List[Dict[str, Any]]:
+    """Content source for RSS-based article feeds."""
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+        reraise=True
+    )
+    def _fetch_feed(self, url: str) -> feedparser.FeedParserDict:
+        """Fetch and parse RSS feed with retry logic."""
+        return feedparser.parse(url)
+
+    def search(
+        self,
+        query: str,
+        sources: list[str] | None = None,
+        limit: int = 5,
+        **kwargs: Any
+    ) -> list[dict[str, Any]]:
+        """Search articles from RSS feeds.
+        
+        Args:
+            query: Search query (first word used as tag).
+            sources: List of source names to search. Defaults to all.
+            limit: Maximum results per source.
+            
+        Returns:
+            List of article metadata dictionaries.
+        """
         if sources is None:
             sources = list(ARTICLE_SOURCES.keys())
 
@@ -22,15 +59,15 @@ class ArticleSource(ContentSource):
 
         for source_name in sources:
             if source_name not in ARTICLE_SOURCES:
+                logger.warning(f'Unknown article source: {source_name}')
                 continue
 
             rss_url = ARTICLE_SOURCES[source_name].format(tag=tag)
             try:
-                feed = feedparser.parse(rss_url)
+                feed = self._fetch_feed(rss_url)
                 for entry in feed.entries[:limit]:
-                    description = BeautifulSoup(
-                        entry.get('summary', ''), 'html.parser'
-                    ).get_text()[:500]
+                    summary = entry.get('summary', '')
+                    description = BeautifulSoup(summary, 'html.parser').get_text()[:500]
 
                     results.append({
                         'title': entry.get('title', 'No title'),
@@ -40,7 +77,13 @@ class ArticleSource(ContentSource):
                         'raw_date': entry.get('published') or entry.get('updated') or '',
                         'description': description,
                     })
-            except Exception:
-                continue
+                logger.debug(f'Fetched {len(feed.entries[:limit])} articles from {source_name}')
+            except ConnectionError as e:
+                logger.warning(f'Connection error fetching {source_name}: {e}')
+            except TimeoutError as e:
+                logger.warning(f'Timeout fetching {source_name}: {e}')
+            except Exception as e:
+                logger.error(f'Unexpected error fetching {source_name}: {e}', exc_info=True)
 
+        logger.info(f'Article search for "{query}" returned {len(results)} results')
         return results

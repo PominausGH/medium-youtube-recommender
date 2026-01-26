@@ -22,3 +22,17 @@ spawn_batch_results.json
 
 # Git worktrees
 .worktrees/
+
+# Production
+logs/
+backups/
+nginx/ssl/
+nginx/logs/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Testing
+.pytest_cache/
